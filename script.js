@@ -5,11 +5,6 @@ function showAlert(message, type = "success") {
     alert(`${type.toUpperCase()}: ${message}`);
 }
 
-function logout() {
-    localStorage.removeItem("currentUser");
-    window.location.href = "index.html";
-}
-
 function saveToLocalStorage(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
 }
@@ -18,12 +13,17 @@ function loadFromLocalStorage(key) {
     return JSON.parse(localStorage.getItem(key)) || [];
 }
 
+function logout() {
+    localStorage.removeItem("currentUser");
+    window.location.href = "index.html";
+}
+
 // -----------------------
 // Theme Handling
 // -----------------------
 function toggleTheme() {
-    const currentTheme = document.body.dataset.theme;
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    const currentTheme = document.body.dataset.theme || "light";
+    const newTheme = currentTheme === "light" ? "dark" : "light";
     document.body.dataset.theme = newTheme;
     localStorage.setItem("theme", newTheme);
 }
@@ -36,7 +36,7 @@ function applySavedTheme() {
 applySavedTheme();
 
 // -----------------------
-// Login and Register
+// Authentication
 // -----------------------
 document.getElementById("loginForm")?.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -48,6 +48,7 @@ document.getElementById("loginForm")?.addEventListener("submit", function (e) {
 
     if (user) {
         saveToLocalStorage("currentUser", user);
+        showAlert("Login berhasil!", "success");
         window.location.href = "dashboard.html";
     } else {
         showAlert("Username atau password salah!", "danger");
@@ -62,7 +63,7 @@ document.getElementById("registerForm")?.addEventListener("submit", function (e)
 
     const users = loadFromLocalStorage("users");
     if (users.some(u => u.username === username)) {
-        showAlert("Username sudah digunakan!", "danger");
+        showAlert("Username sudah terdaftar!", "danger");
     } else {
         users.push({ username, password, role });
         saveToLocalStorage("users", users);
@@ -72,7 +73,7 @@ document.getElementById("registerForm")?.addEventListener("submit", function (e)
 });
 
 // -----------------------
-// Dashboard Logic
+// Dashboard Handling
 // -----------------------
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if (currentUser) {
@@ -124,20 +125,20 @@ function editUser(index) {
     const users = loadFromLocalStorage("users");
     const user = users[index];
 
-    const newUsername = prompt("Username baru:", user.username);
-    const newRole = prompt("Role baru (admin/kasir/operator):", user.role);
+    const newUsername = prompt("Masukkan username baru:", user.username) || user.username;
+    const newRole = prompt("Masukkan role baru (admin/kasir/operator):", user.role) || user.role;
 
     if (newUsername && newRole) {
         users[index] = { ...user, username: newUsername, role: newRole };
         saveToLocalStorage("users", users);
         manageUsers();
-        showAlert("Pengguna berhasil diupdate!", "success");
+        showAlert("Pengguna berhasil diperbarui!", "success");
     }
 }
 
 function deleteUser(index) {
     const users = loadFromLocalStorage("users");
-    if (confirm("Yakin ingin menghapus pengguna?")) {
+    if (confirm("Yakin ingin menghapus pengguna ini?")) {
         users.splice(index, 1);
         saveToLocalStorage("users", users);
         manageUsers();
@@ -160,7 +161,7 @@ function manageTransactions() {
     `).join("");
 
     document.getElementById("dashboardContent").innerHTML = `
-        <h1>Transaksi</h1>
+        <h1>Manajemen Transaksi</h1>
         <form id="transactionForm">
             <input type="text" id="item" placeholder="Nama Barang" required>
             <input type="number" id="amount" placeholder="Jumlah" required>
@@ -175,12 +176,12 @@ function manageTransactions() {
             </tr>
             ${transactionRows}
         </table>
-        <button onclick="exportToCSV()">Ekspor ke CSV</button>
+        <button onclick="exportTransactions()">Ekspor ke CSV</button>
     `;
 
     document.getElementById("transactionForm").addEventListener("submit", function (e) {
         e.preventDefault();
-        const item = document.getElementById("item").value;
+        const item = document.getElementById("item").value.trim();
         const amount = parseInt(document.getElementById("amount").value);
         const date = new Date().toLocaleDateString();
 
@@ -191,7 +192,7 @@ function manageTransactions() {
     });
 }
 
-function exportToCSV() {
+function exportTransactions() {
     const transactions = loadFromLocalStorage("transactions");
     if (transactions.length === 0) {
         showAlert("Tidak ada transaksi untuk diekspor!", "danger");
