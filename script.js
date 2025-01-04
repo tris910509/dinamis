@@ -68,12 +68,14 @@ if (window.location.pathname.endsWith("dashboard.html")) {
     } else {
         const dashboardContent = document.getElementById("dashboardContent");
         const role = currentUser.role;
-
-        if (role === "admin") {
-            dashboardContent.innerHTML = `
-                <h1>Admin Dashboard</h1>
-                <p>Selamat datang, ${currentUser.username}. Anda dapat mengelola pengguna.</p>
-            `;
+if (role === "admin") {
+    dashboardContent.innerHTML = `
+        <h1>Admin Dashboard</h1>
+        <p>Selamat datang, ${currentUser.username}. Anda dapat mengelola pengguna.</p>
+        <button class="btn btn-primary" onclick="manageUsers()">Kelola Pengguna</button>
+    `;
+}
+        
         } else if (role === "kasir") {
             dashboardContent.innerHTML = `
                 <h1>Kasir Dashboard</h1>
@@ -110,6 +112,8 @@ function manageTransactions() {
 
     document.getElementById("dashboardContent").innerHTML = `
         <h1>Kelola Transaksi</h1>
+        <button class="btn btn-secondary mt-3" onclick="toggleTheme()">Toggle Tema</button>
+
         <form id="transactionForm">
             <div class="mb-3">
                 <label for="item" class="form-label">Nama Barang</label>
@@ -210,6 +214,11 @@ if (role === "admin") {
         <h1>Kasir Dashboard</h1>
         <p>Selamat datang, ${currentUser.username}. Anda dapat mengelola transaksi.</p>
     `;
+    if (role === "kasir") {
+    dashboardContent.innerHTML += `
+        <button class="btn btn-success mt-3" onclick="exportToCSV()">Ekspor Transaksi ke CSV</button>
+    `;
+}
     manageTransactions();
 } else if (role === "operator") {
     dashboardContent.innerHTML = `
@@ -218,5 +227,137 @@ if (role === "admin") {
     `;
     viewLogs();
 }
+
+
+
+
+//fungsi berikut untuk mengelola pengguna:
+function manageUsers() {
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const userRows = users.map((user, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${user.username}</td>
+            <td>${user.role}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="editUser(${index})">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser(${index})">Hapus</button>
+            </td>
+        </tr>
+    `).join("");
+
+    document.getElementById("dashboardContent").innerHTML = `
+        <h1>Manajemen Pengguna</h1>
+        <form id="userForm">
+            <div class="mb-3">
+                <label for="newUsername" class="form-label">Username</label>
+                <input type="text" id="newUsername" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="newPassword" class="form-label">Password</label>
+                <input type="password" id="newPassword" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="newRole" class="form-label">Role</label>
+                <select id="newRole" class="form-select" required>
+                    <option value="admin">Admin</option>
+                    <option value="kasir">Kasir</option>
+                    <option value="operator">Operator</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Tambah Pengguna</button>
+        </form>
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>${userRows}</tbody>
+        </table>
+    `;
+
+    document.getElementById("userForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const username = document.getElementById("newUsername").value;
+        const password = document.getElementById("newPassword").value;
+        const role = document.getElementById("newRole").value;
+
+        if (users.some(user => user.username === username)) {
+            showAlert("Username sudah ada!", "danger");
+        } else {
+            users.push({ username, password, role });
+            localStorage.setItem("users", JSON.stringify(users));
+            manageUsers();
+            showAlert("Pengguna berhasil ditambahkan!", "success");
+        }
+    });
+}
+
+function editUser(index) {
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const user = users[index];
+    const newUsername = prompt("Edit Username", user.username);
+    const newRole = prompt("Edit Role (admin, kasir, operator)", user.role);
+
+    if (newUsername && newRole) {
+        users[index] = { ...user, username: newUsername, role: newRole };
+        localStorage.setItem("users", JSON.stringify(users));
+        manageUsers();
+        showAlert("Pengguna berhasil diperbarui!", "success");
+    }
+}
+
+function deleteUser(index) {
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+    if (confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
+        users.splice(index, 1);
+        localStorage.setItem("users", JSON.stringify(users));
+        manageUsers();
+        showAlert("Pengguna berhasil dihapus!", "success");
+    }
+}
+
+
+
+function exportToCSV() {
+    const transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+    if (transactions.length === 0) {
+        showAlert("Tidak ada data transaksi untuk diekspor!", "danger");
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,No,Nama Barang,Jumlah,Tanggal\n";
+    transactions.forEach((trx, index) => {
+        csvContent += `${index + 1},${trx.item},${trx.amount},${trx.date}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "transaksi.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+//Tema Gelap/Terang dengan Penyimpanan Preferensi
+function toggleTheme() {
+    const currentTheme = document.body.dataset.theme;
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+    document.body.dataset.theme = newTheme;
+    localStorage.setItem("theme", newTheme);
+}
+
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.body.dataset.theme = savedTheme;
+}
+
+applySavedTheme();
 
 
