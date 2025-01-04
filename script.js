@@ -72,10 +72,10 @@ if (role === "admin") {
     dashboardContent.innerHTML = `
         <h1>Admin Dashboard</h1>
         <p>Selamat datang, ${currentUser.username}. Anda dapat mengelola pengguna.</p>
-        <button class="btn btn-primary" onclick="manageUsers()">Kelola Pengguna</button>
+        
     `;
 }
-        
+        <button class="btn btn-primary" onclick="manageUsers()">Kelola Pengguna</button>
         } else if (role === "kasir") {
             dashboardContent.innerHTML = `
                 <h1>Kasir Dashboard</h1>
