@@ -10,6 +10,14 @@ function logout() {
     window.location.href = "index.html";
 }
 
+function saveToLocalStorage(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function loadFromLocalStorage(key) {
+    return JSON.parse(localStorage.getItem(key)) || [];
+}
+
 // -----------------------
 // Theme Handling
 // -----------------------
@@ -32,14 +40,14 @@ applySavedTheme();
 // -----------------------
 document.getElementById("loginForm")?.addEventListener("submit", function (e) {
     e.preventDefault();
-    const username = document.getElementById("username").value;
+    const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const users = loadFromLocalStorage("users");
     const user = users.find(u => u.username === username && u.password === password);
 
     if (user) {
-        localStorage.setItem("currentUser", JSON.stringify(user));
+        saveToLocalStorage("currentUser", user);
         window.location.href = "dashboard.html";
     } else {
         showAlert("Username atau password salah!", "danger");
@@ -48,16 +56,16 @@ document.getElementById("loginForm")?.addEventListener("submit", function (e) {
 
 document.getElementById("registerForm")?.addEventListener("submit", function (e) {
     e.preventDefault();
-    const username = document.getElementById("username").value;
+    const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
     const role = document.getElementById("role").value;
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const users = loadFromLocalStorage("users");
     if (users.some(u => u.username === username)) {
         showAlert("Username sudah digunakan!", "danger");
     } else {
         users.push({ username, password, role });
-        localStorage.setItem("users", JSON.stringify(users));
+        saveToLocalStorage("users", users);
         showAlert("Registrasi berhasil!", "success");
         window.location.href = "index.html";
     }
@@ -68,7 +76,7 @@ document.getElementById("registerForm")?.addEventListener("submit", function (e)
 // -----------------------
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 if (currentUser) {
-    document.getElementById("roleTitle").textContent = `${currentUser.role.toUpperCase()} Dashboard`;
+    document.getElementById("roleTitle")?.textContent = `${currentUser.role.toUpperCase()} Dashboard`;
 
     if (currentUser.role === "admin") {
         manageUsers();
@@ -85,7 +93,7 @@ if (currentUser) {
 // Admin Features
 // -----------------------
 function manageUsers() {
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const users = loadFromLocalStorage("users");
     const userRows = users.map((user, index) => `
         <tr>
             <td>${index + 1}</td>
@@ -113,7 +121,7 @@ function manageUsers() {
 }
 
 function editUser(index) {
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const users = loadFromLocalStorage("users");
     const user = users[index];
 
     const newUsername = prompt("Username baru:", user.username);
@@ -121,17 +129,17 @@ function editUser(index) {
 
     if (newUsername && newRole) {
         users[index] = { ...user, username: newUsername, role: newRole };
-        localStorage.setItem("users", JSON.stringify(users));
+        saveToLocalStorage("users", users);
         manageUsers();
         showAlert("Pengguna berhasil diupdate!", "success");
     }
 }
 
 function deleteUser(index) {
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const users = loadFromLocalStorage("users");
     if (confirm("Yakin ingin menghapus pengguna?")) {
         users.splice(index, 1);
-        localStorage.setItem("users", JSON.stringify(users));
+        saveToLocalStorage("users", users);
         manageUsers();
         showAlert("Pengguna berhasil dihapus!", "success");
     }
@@ -141,7 +149,7 @@ function deleteUser(index) {
 // Kasir Features
 // -----------------------
 function manageTransactions() {
-    const transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+    const transactions = loadFromLocalStorage("transactions");
     const transactionRows = transactions.map((trx, index) => `
         <tr>
             <td>${index + 1}</td>
@@ -173,18 +181,18 @@ function manageTransactions() {
     document.getElementById("transactionForm").addEventListener("submit", function (e) {
         e.preventDefault();
         const item = document.getElementById("item").value;
-        const amount = document.getElementById("amount").value;
+        const amount = parseInt(document.getElementById("amount").value);
         const date = new Date().toLocaleDateString();
 
         transactions.push({ item, amount, date });
-        localStorage.setItem("transactions", JSON.stringify(transactions));
+        saveToLocalStorage("transactions", transactions);
         manageTransactions();
         showAlert("Transaksi berhasil ditambahkan!", "success");
     });
 }
 
 function exportToCSV() {
-    const transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+    const transactions = loadFromLocalStorage("transactions");
     if (transactions.length === 0) {
         showAlert("Tidak ada transaksi untuk diekspor!", "danger");
         return;
@@ -203,7 +211,7 @@ function exportToCSV() {
 // Operator Features
 // -----------------------
 function viewLogs() {
-    const logs = JSON.parse(localStorage.getItem("logs")) || [];
+    const logs = loadFromLocalStorage("logs");
     const logRows = logs.map((log, index) => `
         <tr>
             <td>${index + 1}</td>
@@ -226,7 +234,7 @@ function viewLogs() {
 }
 
 function logActivity(action) {
-    const logs = JSON.parse(localStorage.getItem("logs")) || [];
+    const logs = loadFromLocalStorage("logs");
     logs.push({ action, date: new Date().toLocaleString() });
-    localStorage.setItem("logs", JSON.stringify(logs));
+    saveToLocalStorage("logs", logs);
 }
