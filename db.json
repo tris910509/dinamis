@@ -5,11 +5,6 @@
     { "id": 2, "username": "kasir", "password": "kasir123", "role": "kasir" },
     { "id": 3, "username": "operator", "password": "operator123", "role": "operator" }
   ],
-"products": [...],
-  "categories": [...],
-  "suppliers": [...],
-  "transactions": [...]
-  
   "products": [
     { "id": 1, "name": "Product A", "category_id": 1, "supplier_id": 1, "price": 100, "stock": 50 },
     { "id": 2, "name": "Product B", "category_id": 2, "supplier_id": 2, "price": 200, "stock": 30 }
