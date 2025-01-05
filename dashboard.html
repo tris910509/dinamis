@@ -24,6 +24,60 @@
     <button class="btn btn-danger mt-3" id="logout">Logout</button>
   </div>
 
+  <div id="adminSection" style="display: none;">
+  <h3>Manage Users</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
+</div>
+
+<script>
+  async function loadUsers() {
+    const response = await fetch('db.json');
+    const data = await response.json();
+    const userTable = document.getElementById('userTable');
+    userTable.innerHTML = data.users.map(user => `
+      <tr>
+        <td>${user.id}</td>
+        <td>${user.username}</td>
+        <td>${user.role}</td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function deleteUser(id) {
+    const response = await fetch('db.json');
+    const data = await response.json();
+    data.users = data.users.filter(user => user.id !== id);
+
+    await fetch('api.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    alert('User deleted');
+    loadUsers();
+  }
+
+  if (user.role === 'admin') {
+    document.getElementById('adminSection').style.display = 'block';
+    loadUsers();
+  }
+</script>
+
+
   <script>
     const user = JSON.parse(localStorage.getItem('user'));
 
