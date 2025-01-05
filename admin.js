@@ -66,3 +66,234 @@ const deleteProduct = async (id) => {
 };
 
 document.addEventListener('DOMContentLoaded', renderProducts);
+
+const renderCategories = async () => {
+  const response = await fetch('http://localhost:3000/categories');
+  const categories = await response.json();
+
+  let html = `
+    <button class="btn btn-primary mb-3" onclick="addCategory()">Add Category</button>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${categories.map(category => `
+          <tr>
+            <td>${category.id}</td>
+            <td>${category.name}</td>
+            <td>
+              <button class="btn btn-sm btn-warning" onclick="editCategory(${category.id})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteCategory(${category.id})">Delete</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('categories').innerHTML = html;
+};
+
+
+const addCategory = async () => {
+  const name = prompt('Enter category name:');
+  if (!name) return alert('Category name is required.');
+
+  const newCategory = { name };
+  await fetch('http://localhost:3000/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newCategory)
+  });
+
+  alert('Category added!');
+  renderCategories();
+};
+
+const editCategory = async (id) => {
+  const name = prompt('Enter new category name:');
+  if (!name) return alert('Category name is required.');
+
+  await fetch(`http://localhost:3000/categories/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+
+  alert('Category updated!');
+  renderCategories();
+};
+
+const deleteCategory = async (id) => {
+  if (confirm('Are you sure you want to delete this category?')) {
+    await fetch(`http://localhost:3000/categories/${id}`, { method: 'DELETE' });
+    alert('Category deleted!');
+    renderCategories();
+  }
+};
+
+
+const renderSuppliers = async () => {
+  const response = await fetch('http://localhost:3000/suppliers');
+  const suppliers = await response.json();
+
+  let html = `
+    <button class="btn btn-primary mb-3" onclick="addSupplier()">Add Supplier</button>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${suppliers.map(supplier => `
+          <tr>
+            <td>${supplier.id}</td>
+            <td>${supplier.name}</td>
+            <td>${supplier.contact}</td>
+            <td>
+              <button class="btn btn-sm btn-warning" onclick="editSupplier(${supplier.id})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${supplier.id})">Delete</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('suppliers').innerHTML = html;
+};
+
+
+const addSupplier = async () => {
+  const name = prompt('Enter supplier name:');
+  const contact = prompt('Enter supplier contact:');
+  if (!name || !contact) return alert('All fields are required.');
+
+  const newSupplier = { name, contact };
+  await fetch('http://localhost:3000/suppliers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newSupplier)
+  });
+
+  alert('Supplier added!');
+  renderSuppliers();
+};
+
+const editSupplier = async (id) => {
+  const name = prompt('Enter new supplier name:');
+  const contact = prompt('Enter new supplier contact:');
+  if (!name || !contact) return alert('All fields are required.');
+
+  await fetch(`http://localhost:3000/suppliers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, contact })
+  });
+
+  alert('Supplier updated!');
+  renderSuppliers();
+};
+
+const deleteSupplier = async (id) => {
+  if (confirm('Are you sure you want to delete this supplier?')) {
+    await fetch(`http://localhost:3000/suppliers/${id}`, { method: 'DELETE' });
+    alert('Supplier deleted!');
+    renderSuppliers();
+  }
+};
+
+
+
+const renderTransactions = async () => {
+  const response = await fetch('http://localhost:3000/transactions');
+  const transactions = await response.json();
+  const products = await fetch('http://localhost:3000/products').then(res => res.json());
+
+  let html = `
+    <button class="btn btn-primary mb-3" onclick="addTransaction()">Add Transaction</button>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Total</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${transactions.map(transaction => `
+          <tr>
+            <td>${transaction.id}</td>
+            <td>${products.find(p => p.id === transaction.product_id)?.name}</td>
+            <td>${transaction.quantity}</td>
+            <td>${transaction.total}</td>
+            <td>${transaction.date}</td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteTransaction(${transaction.id})">Delete</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('transactions').innerHTML = html;
+};
+
+
+const addTransaction = async () => {
+  const product_id = parseInt(prompt('Enter product ID:'));
+  const quantity = parseInt(prompt('Enter quantity:'));
+  const products = await fetch('http://localhost:3000/products').then(res => res.json());
+  const product = products.find(p => p.id === product_id);
+
+  if (!product) return alert('Invalid product ID.');
+  if (quantity > product.stock) return alert('Insufficient stock.');
+
+  const total = product.price * quantity;
+  const date = new Date().toISOString().split('T')[0];
+  const newTransaction = { product_id, quantity, total, date };
+
+  await fetch('http://localhost:3000/transactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newTransaction)
+  });
+
+  // Update stock
+  await fetch(`http://localhost:3000/products/${product_id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...product, stock: product.stock - quantity })
+  });
+
+  alert('Transaction added!');
+  renderTransactions();
+};
+
+const deleteTransaction = async (id) => {
+  if (confirm('Are you sure you want to delete this transaction?')) {
+    await fetch(`http://localhost:3000/transactions/${id}`, { method: 'DELETE' });
+    alert('Transaction deleted!');
+    renderTransactions();
+  }
+};
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderProducts();
+  renderCategories();
+  renderSuppliers();
+  renderTransactions();
+});
+
