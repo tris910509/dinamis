@@ -289,11 +289,56 @@ const deleteTransaction = async (id) => {
 };
 
 
+const renderReports = async () => {
+  // Fetch data transaksi
+  const transactions = await fetch('http://localhost:3000/transactions').then(res => res.json());
+
+  // Hitung total transaksi dan total pendapatan
+  const totalTransactions = transactions.length;
+  const totalRevenue = transactions.reduce((sum, transaction) => sum + transaction.total, 0);
+
+  // Tampilkan laporan
+  const html = `
+    <h3>Transaction Summary</h3>
+    <ul class="list-group">
+      <li class="list-group-item">Total Transactions: <strong>${totalTransactions}</strong></li>
+      <li class="list-group-item">Total Revenue: <strong>$${totalRevenue.toFixed(2)}</strong></li>
+    </ul>
+    <h4 class="mt-4">Transaction Details</h4>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Product ID</th>
+          <th>Quantity</th>
+          <th>Total</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${transactions.map(transaction => `
+          <tr>
+            <td>${transaction.id}</td>
+            <td>${transaction.product_id}</td>
+            <td>${transaction.quantity}</td>
+            <td>$${transaction.total.toFixed(2)}</td>
+            <td>${transaction.date}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  document.getElementById('reports').innerHTML = html;
+};
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
   renderProducts();
   renderCategories();
   renderSuppliers();
   renderTransactions();
+  renderReports(); // Panggil fungsi untuk menampilkan laporan
 });
 
